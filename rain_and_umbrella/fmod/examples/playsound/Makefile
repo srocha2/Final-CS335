@@ -1,0 +1,5 @@
+all: main.c
+	gcc -O2 -m64 -o example $< ../../api/lib/libfmodex64.so
+
+clean:
+	rm -f example

@@ -1,0 +1,62 @@
+/*===============================================================================================
+ PlaySound Example
+ Copyright (c), Firelight Technologies Pty, Ltd 2004-2011.
+
+ This example shows how to simply load and play multiple sounds.  This is about the simplest
+ use of FMOD.
+ This makes FMOD decode the into memory when it loads.  If the sounds are big and possibly take
+ up a lot of ram, then it would be better to use the FMOD_CREATESTREAM flag so that it is 
+ streamed in realtime as it plays.
+===============================================================================================*/
+#include "../../api/inc/fmod.h"
+#include "../../api/inc/fmod_errors.h"
+#include "../common/wincompat.h"
+#include <stdio.h>
+
+#define NSOUNDS 3
+extern FMOD_CHANNEL *channel;
+extern int fmod_cleanup(void);
+extern int fmod_init(void);
+extern int fmod_createsound(char *fname, int i);
+extern int fmod_playsound(int i);
+extern int fmod_setmode(int i);
+extern int fmod_getlength(int i, unsigned int *lenms);
+extern int fmod_systemupdate(void);
+extern int fmod_getchannelsplaying(int *channelsplaying);
+
+int main(int argc, char *argv[])
+{
+	FMOD_RESULT result;
+	int key, k;
+	if (fmod_init()) return 1;
+	if (fmod_createsound("../media/drumloop.wav", 0)) return 1;
+	if (fmod_createsound("../media/jaguar.wav",   1)) return 1;
+	if (fmod_createsound("../media/swish.wav",    2)) return 1;
+	fmod_setmode(0);
+	if (ERRCHECK(result)) return 1;
+    printf("===================================================================\n");
+    printf("PlaySound Example.  Copyright (c) Firelight Technologies 2004-2011.\n");
+    printf("===================================================================\n");
+    printf("\n");
+    printf("Press '1' to Play a mono sound using hardware mixing\n");
+    printf("Press '2' to Play a mono sound using software mixing\n");
+    printf("Press '3' to Play a stereo sound using hardware mixing\n");
+    printf("Press 'Esc' to quit\n");
+    printf("\n");
+	do {
+		if (kbhit()) {
+			key = getch();
+			k = key - '0';
+			if (k > 0 && k < 4) {
+				if (fmod_playsound(k-1)) return 1;
+			}
+		}
+		fmod_systemupdate();
+	} while (key != 27);
+	printf("\n");
+	//shut down
+	fmod_cleanup();
+	return 0;
+}
+
+
