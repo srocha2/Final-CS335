@@ -18,8 +18,6 @@
 #include "defs.h"
 #include <GL/glfw.h>
 
-
-#ifdef USE_SOUND
 #include <FMOD/fmod.h>
 #include <FMOD/wincompat.h>
 #include "fmod.h"
@@ -241,8 +239,6 @@ void difficulty(void)
     glEnd();
     glBindTexture(GL_TEXTURE_2D,0);
 }
-<<<<<<< HEAD
-
 void twoPlayer(void)
 {
     glColor3f(1.0f,1.0f,1.0f);
@@ -255,8 +251,6 @@ void twoPlayer(void)
     glEnd();
     glBindTexture(GL_TEXTURE_2D,0);
 }
-
-
 
 void gameOver(void)
 {
@@ -294,7 +288,7 @@ void checkkey(int k1, int k2)
 	//don't process any other keys on a release
 	return;
     }
-    
+   
     if (k1 == 'S') {
 	play_sounds ^= 1;
 	return;
@@ -312,7 +306,7 @@ void checkkey(int k1, int k2)
     }
 */
 
-if (k1 == 'N') {
+    if (k1 == 'N') {
         lvl= 1;
 }
 if (k1 == 'Q') {
