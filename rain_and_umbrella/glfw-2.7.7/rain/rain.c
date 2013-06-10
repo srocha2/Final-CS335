@@ -49,7 +49,6 @@ extern GLuint loadBMP(const char *imagepath);
 extern GLuint tex_readgl_bmp(char *fileName, int alpha_channel);
 
 //Added Functions
-void check_mouse(void);
 void draw_explosion(int,int,int);
 void draw_end(void);
 void draw_projectile(void);
@@ -196,7 +195,6 @@ int main(int argc, char **argv)
 	for (i=0; i<time_control; i++)
 	    physics();
 	render();
-	check_mouse();
 	glfwSwapBuffers();
 	if (glfwGetKey(GLFW_KEY_ESC)) break;
 	if (!glfwGetWindowParam(GLFW_OPENED)) break;
@@ -972,22 +970,6 @@ void cleanup_projectiles(void){
     Log("Finished cleanup_projectile\n");
 }
 
-
-void check_mouse(void){
-    int x,y;
-    int lbutton=0;
-
-    if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
-	glfwGetMousePos(&x,&y);
-	y=yres-y;
-	explosion_X[0] = x;
-	explosion_Y[0] = y;
-	size[0] = 1;
-
-    }
-
-}
-
 void show_explosion(int x, int y)
 {
     int w;
@@ -1005,7 +987,7 @@ void show_explosion(int x, int y)
 		    chain_y = y;
 	    	    return;
 	    	}
-    } 
+    }
 }
 
 void draw_explosion(int w,int x, int y){
