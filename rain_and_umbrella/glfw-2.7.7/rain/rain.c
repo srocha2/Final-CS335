@@ -1,8 +1,12 @@
 //cs335 - Spring 2013
-//program: Rain drops
-//author:  Gordon Griesel
-//purpose: Final Program 
-//
+//Program: Space Defender
+//Author:  Gordon Griesel
+//	   Kris Cheesman
+//	   Major Ebalo
+//	   Hector Aguirre
+//	   Ivan Melendez
+//	   Servand Rocha
+//Purpose: CS335--Software Engineering Final Program 
 
 #include <stdio.h>
 #include <stdlib.h>
