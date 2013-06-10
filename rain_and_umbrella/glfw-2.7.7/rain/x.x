@@ -1,4 +1,4 @@
-setting window to: 1366 x 671
+setting window to: 1680 x 1050
 setting up alpha channel for **spaceship.bmp**
 setting up alpha channel for **bomb.bmp**
 setting up alpha channel for **space.bmp**
