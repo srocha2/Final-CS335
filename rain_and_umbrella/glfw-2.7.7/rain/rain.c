@@ -50,7 +50,6 @@ extern GLuint tex_readgl_bmp(char *fileName, int alpha_channel);
 
 //Added Functions
 void draw_explosion(int,int,int);
-void draw_end(void);
 void draw_projectile(void);
 void show_explosion(int, int);
 
@@ -419,14 +418,6 @@ void render(GLvoid)
         difficulty();
 
         if(lvl == 3 && lives > 0) {
-
-
-    /*if(lives<=0){
-      while(1){
-      draw_end();
-      if (glfwGetKey(GLFW_KEY_ESC)) break;
-      }
-      }*/
 
     //Background
     draw_background();
@@ -1006,17 +997,4 @@ void draw_explosion(int w,int x, int y){
     glDisable(GL_ALPHA_TEST);
     glBindTexture(GL_TEXTURE_2D,0);
 }
-
-void draw_end(void){
-    glColor3f(1.0f,1.0f,0.0f);
-    glBegin(GL_QUADS);
-    glVertex2i(0,0);
-    glVertex2i(xres,0);
-    glVertex2i(xres,yres);
-    glVertex2i(0,yres);
-    glEnd();
-}
-
-
-
 
