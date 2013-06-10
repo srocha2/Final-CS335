@@ -458,8 +458,9 @@ void render(GLvoid)
     ggprint12(&r, 20, 0x0000ff00, "Lives Left: %i\n",lives);
     ggprint12(&r, 20, 0x00ff0000, "Score: %i \n", score);
     ggprint12(&r, 20, 0x00ff0000, "Missiles Left: %i \n", missiles_left);
-    ggprint12(&r, 20, 0x00ff0000, "Ship 1 Health: %i \n", hull1);
-    ggprint12(&r, 20, 0x00ff0000, "Ship 2 Health: %i \n", hull2);
+    ggprint12(&r, 20, 0x00ff0000, "Ship 1 Health: %i%\n", hull1);
+    if(players>0)
+	ggprint12(&r, 20, 0x00ff0000, "Ship 2 Health: %i%\n", hull2);
 
     glColor3f(1.0f,1.0f,1.0f);
 }
@@ -882,7 +883,7 @@ void physics(void)
 			    }
 			}
 		}
-	    }
+	    
 
 	    if (node->pos[1] < -20.0f) {
 		//rain drop is below the visible area
