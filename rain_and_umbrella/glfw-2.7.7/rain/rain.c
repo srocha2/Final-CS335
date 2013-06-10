@@ -60,7 +60,7 @@ int yres=600;
 
 int keys[512];
 
-int players;
+int players = 0;;
 
 //Bombs Down
 typedef struct t_raindrop {
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
     if (fmod_createsound("../media/drip.wav", 1)) return 1;
     fmod_setmode(0,FMOD_LOOP_NORMAL);
     fmod_playsound(0);
- if (fmod_createsound("../media/explosion2.wav", 2)) return 1; //laser fire
+    if (fmod_createsound("../media/explosion2.wav", 2)) return 1; //laser fire
     //fmod_systemupdate();
     //
     glfwInit();
@@ -268,7 +268,7 @@ void gameOver(void)
 void checkkey(int k1, int k2)
 {
     static int shift=0;
-    
+
     if (k2 == GLFW_PRESS) {
 	//some key is being pressed now
 	keys[k1] = 1;
@@ -287,7 +287,7 @@ void checkkey(int k1, int k2)
 	//don't process any other keys on a release
 	return;
     }
-   
+
     if (k1 == 'S') {
 	play_sounds ^= 1;
 	return;
@@ -298,45 +298,45 @@ void checkkey(int k1, int k2)
 	    time_control = 0;
 	return;
     }
-/*    if (k1 == '1') {
-	if (++time_control > 32)
-	    time_control = 32;
-	return;
-    }
-*/
+    /*    if (k1 == '1') {
+	  if (++time_control > 32)
+	  time_control = 32;
+	  return;
+	  }
+	  */
 
     if (k1 == 'N') {
-        lvl= 1;
-}
-if (k1 == 'Q') {
-        exit(EXIT_FAILURE);
-        }
-if (k1 == '1'){
-        lvl = 2;
+	lvl= 1;
+    }
+    if (k1 == 'Q') {
+	exit(EXIT_FAILURE);
+    }
+    if (k1 == '1'){
+	lvl = 2;
 	players = 0;
-}
-if (k1 == '2'){
-        lvl = 2;
-	players = 0;
-}
-if (k1 == 'I'){
-        lvl = 3;
-        lives = 50;
-        missileNums = 1000;
-        time_control = 1;
-        }
-if (k1 == 'O'){
-        lvl = 3;
-        lives = 30;
-        missileNums = 500;
-        time_control = 2;
-        }
-if (k1 == 'P'){
-        lvl = 3;
-        lives = 20;
-        missileNums=100;
-        time_control=3;
-        }
+    }
+    if (k1 == '2'){
+	lvl = 2;
+	players = 5;
+    }
+    if (k1 == 'B'){
+	lvl = 3;
+	lives = 50;
+	missileNums = 1000;
+	time_control = 1;
+    }
+    if (k1 == 'I'){
+	lvl = 3;
+	lives = 30;
+	missileNums = 500;
+	time_control = 2;
+    }
+    if (k1 == 'E'){
+	lvl = 3;
+	lives = 20;
+	missileNums=100;
+	time_control=3;
+    }
 
 
 
@@ -349,7 +349,7 @@ void init(void)
     int i;
     for (i=0; i<256; i++)
     {
-    	keys[i] = 0;
+	keys[i] = 0;
     }
     umbrella.pos[0] = xres/2; 
     umbrella.pos[1] = 100;
@@ -406,64 +406,64 @@ void render(GLvoid)
     glEnable(GL_BLEND);
 
 
-	if(lives < -1)
-        gameOver();
+    if(lives < -1)
+	gameOver();
 
 
-        if(lvl == 0)
-        newGame();
+    if(lvl == 0)
+	newGame();
 
-        if(lvl ==1)
-        twoPlayer();
+    if(lvl ==1)
+	twoPlayer();
 
-        if(lvl ==2)
-        difficulty();
+    if(lvl ==2)
+	difficulty();
 
-        if(lvl == 3 && lives > 0) {
+    if(lvl == 3 && lives > 0) {
 
-    //Background
-    draw_background();
+	//Background
+	draw_background();
 
-    //Bombs
-    draw_raindrops();
-    draw_projectile();
+	//Bombs
+	draw_raindrops();
+	draw_projectile();
 
-    int w;
-    int c;
-    for (w = 0; w < explodeCount; w++)
-    if(size[w] > 0){
-	chain = 1;
-	size[w] ++;
-	draw_explosion(w,explosion_X[w],explosion_Y[w]);
+	int w;
+	int c;
+	for (w = 0; w < explodeCount; w++)
+	    if(size[w] > 0){
+		chain = 1;
+		size[w] ++;
+		draw_explosion(w,explosion_X[w],explosion_Y[w]);
 
-	if(size[w] >=100+rnd()*500)
-	{
-	    size[w] = 0;
-	    chain = 0;
-	}
+		if(size[w] >=100+rnd()*500)
+		{
+		    size[w] = 0;
+		    chain = 0;
+		}
+	    }
+
+	glDisable(GL_BLEND);
+
+	draw_umbrella();
+	if (players>0)
+	    draw_umbrella2();
+
+	//Draw Text
+	Rect r;
+	r.left   = xres-140;
+	r.bot    = yres-50;
+	r.center = 0;
+	ggprint12(&r, 20, 0x00ff0000, "Total Missles: %i",totrain);
+	ggprint12(&r, 20, 0x0000ff00, "Lives Left: %i\n",lives);
+	ggprint12(&r, 20, 0x00ff0000, "Score: %i \n", score);
+	ggprint12(&r, 20, 0x00ff0000, "Missiles Left: %i \n", missiles_left);
+	ggprint12(&r, 20, 0x00ff0000, "Ship 1 Health: %i%\n", hull1);
+	if(players>0)
+	    ggprint12(&r, 20, 0x00ff0000, "Ship 2 Health: %i%\n", hull2);
+
+	glColor3f(1.0f,1.0f,1.0f);
     }
-
-    glDisable(GL_BLEND);
-
-    draw_umbrella();
-    if ( players == 1)
-	draw_umbrella2();
-
-    //Draw Text
-    Rect r;
-    r.left   = xres-140;
-    r.bot    = yres-50;
-    r.center = 0;
-    ggprint12(&r, 20, 0x00ff0000, "Total Missles: %i",totrain);
-    ggprint12(&r, 20, 0x0000ff00, "Lives Left: %i\n",lives);
-    ggprint12(&r, 20, 0x00ff0000, "Score: %i \n", score);
-    ggprint12(&r, 20, 0x00ff0000, "Missiles Left: %i \n", missiles_left);
-    ggprint12(&r, 20, 0x00ff0000, "Ship 1 Health: %i%\n", hull1);
-    if(players>0)
-	ggprint12(&r, 20, 0x00ff0000, "Ship 2 Health: %i%\n", hull2);
-
-    glColor3f(1.0f,1.0f,1.0f);
-}
 }
 
 
@@ -512,23 +512,23 @@ void draw_umbrella2(void)
 void draw_projectile(void){
     //Log("draw_projectile\n");
     for(loop=0;loop<missleCount;loop++){
-        if(Missile[loop].status==1){
-            glPushMatrix();
-            glEnable(GL_ALPHA_TEST);
-            glAlphaFunc(GL_GREATER, 0.0f);
-            //Bind Missile to Projectiles
-            glBindTexture(GL_TEXTURE_2D,missile);
-            glBegin(GL_QUADS);
-            glTexCoord2f(0.0f,0.0f); glVertex2i(Missile[loop].p_pos[0]-(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]);
-            glTexCoord2f(0.0f,1.0f); glVertex2i(Missile[loop].p_pos[0]-(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]+Missile[loop].p_length);
-            glTexCoord2f(1.0f,1.0f); glVertex2i(Missile[loop].p_pos[0]+(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]+Missile[loop].p_length);
-            glTexCoord2f(1.0f,0.0f); glVertex2i(Missile[loop].p_pos[0]+(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]);
-            glEnd();
-            glDisable(GL_ALPHA_TEST);
-            glBindTexture(GL_TEXTURE_2D,0);
-            glPopMatrix();
-            //Log("Draw Loop: %i \n",loop);
-        }
+	if(Missile[loop].status==1){
+	    glPushMatrix();
+	    glEnable(GL_ALPHA_TEST);
+	    glAlphaFunc(GL_GREATER, 0.0f);
+	    //Bind Missile to Projectiles
+	    glBindTexture(GL_TEXTURE_2D,missile);
+	    glBegin(GL_QUADS);
+	    glTexCoord2f(0.0f,0.0f); glVertex2i(Missile[loop].p_pos[0]-(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]);
+	    glTexCoord2f(0.0f,1.0f); glVertex2i(Missile[loop].p_pos[0]-(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]+Missile[loop].p_length);
+	    glTexCoord2f(1.0f,1.0f); glVertex2i(Missile[loop].p_pos[0]+(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]+Missile[loop].p_length);
+	    glTexCoord2f(1.0f,0.0f); glVertex2i(Missile[loop].p_pos[0]+(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]);
+	    glEnd();
+	    glDisable(GL_ALPHA_TEST);
+	    glBindTexture(GL_TEXTURE_2D,0);
+	    glPopMatrix();
+	    //Log("Draw Loop: %i \n",loop);
+	}
     }
     //Log("Ended draw_projectile\n");
 }
@@ -597,7 +597,7 @@ double VecNormalize(Vec vec) {
 
 void physics(void)
 {
-    
+
     //Keep player in viewable space
     if (umbrella.pos[0] >= (float)xres)
 	umbrella.pos[0] -= 2.0;
@@ -671,56 +671,56 @@ void physics(void)
 	//pFire = 0; // reset shoot condition
 	if (glfwGetTime() > pFire[0])
 	{
-	    pFire[0] = glfwGetTime() + 0.5;
+	    pFire[0] = glfwGetTime() + 0.1;
 	    for(loop=0;loop<missleCount;loop++){
-    		Log("Inside Create Missile For\n");
-    		if(Missile[loop].status==0){
-    		    Log("Inside Create Missile If\n");
-    		    missiles_left--;
-    		    Missile[loop].status = 1;
-    		    Missile[loop].p_pos[0] = umbrella.pos[0]-6;   //Create at umbrella x
-    		    Missile[loop].p_pos[1] = umbrella.pos[1]+30;  //Create at umbrella y
-    		    VecCopy(Missile[loop].p_pos,Missile[loop].p_lastpos);
-    		    Missile[loop].p_vel[0] = 0.0f;
-    		    Missile[loop].p_vel[1] = 0.0f;
-    		    Missile[loop].p_linewidth = 20;
-    		    Missile[loop].p_maxvel[1] = (float)(Missile[loop].p_linewidth*.9);
-    		    Missile[loop].p_length = 35;
-    		    Log("Done Creating Missile\n");
-    		    break;
+		Log("Inside Create Missile For\n");
+		if(Missile[loop].status==0){
+		    Log("Inside Create Missile If\n");
+		    missiles_left--;
+		    Missile[loop].status = 1;
+		    Missile[loop].p_pos[0] = umbrella.pos[0]-6;   //Create at umbrella x
+		    Missile[loop].p_pos[1] = umbrella.pos[1]+30;  //Create at umbrella y
+		    VecCopy(Missile[loop].p_pos,Missile[loop].p_lastpos);
+		    Missile[loop].p_vel[0] = 0.0f;
+		    Missile[loop].p_vel[1] = 0.0f;
+		    Missile[loop].p_linewidth = 20;
+		    Missile[loop].p_maxvel[1] = (float)(Missile[loop].p_linewidth*.9);
+		    Missile[loop].p_length = 35;
+		    Log("Done Creating Missile\n");
+		    break;
 		}
-    	    }
+	    }
 	}
     }
 
     if (players > 0)
     {
 	if (keys['W'] == 1)
-    	{
-    	    //pFire = 0; // reset shoot condition
+	{
+	    //pFire = 0; // reset shoot condition
 	    if (glfwGetTime() > pFire[1])
-    	    {
-    		pFire[1] = glfwGetTime() + 0.5;
-    		for(loop=0;loop<missleCount;loop++){
-    		    Log("Inside Create Missile For\n");
-    		    if(Missile[loop].status==0){
-    			Log("Inside Create Missile If\n");
-    			missiles_left--;
-    			Missile[loop].status = 1;
-    			Missile[loop].p_pos[0] = umbrella2.pos[0]-6;   //Create at umbrella x
+	    {
+		pFire[1] = glfwGetTime() + 0.1;
+		for(loop=0;loop<missleCount;loop++){
+		    Log("Inside Create Missile For\n");
+		    if(Missile[loop].status==0){
+			Log("Inside Create Missile If\n");
+			missiles_left--;
+			Missile[loop].status = 1;
+			Missile[loop].p_pos[0] = umbrella2.pos[0]-6;   //Create at umbrella x
 			Missile[loop].p_pos[1] = umbrella2.pos[1]+30;  //Create at umbrella y          
-	       		VecCopy(Missile[loop].p_pos,Missile[loop].p_lastpos);
-    			Missile[loop].p_vel[0] = 0.0f;
+			VecCopy(Missile[loop].p_pos,Missile[loop].p_lastpos);
+			Missile[loop].p_vel[0] = 0.0f;
 			Missile[loop].p_vel[1] = 0.0f;
-    			Missile[loop].p_linewidth = 20;
-    			Missile[loop].p_maxvel[1] = (float)(Missile[loop].p_linewidth*.9);
-    			Missile[loop].p_length = 35;
-    			Log("Done Creating player 2 Missile\n");
-    			break;
-                }
-            }
-        }
-    }
+			Missile[loop].p_linewidth = 20;
+			Missile[loop].p_maxvel[1] = (float)(Missile[loop].p_linewidth*.9);
+			Missile[loop].p_length = 35;
+			Log("Done Creating player 2 Missile\n");
+			break;
+		    }
+		}
+	    }
+	}
 
     }
 
@@ -748,20 +748,20 @@ void physics(void)
     //move player-fired projectile upward
 
     for(loop=0;loop<missleCount;loop++){
-        if(Missile[loop].status==1){
-            Missile[loop].p_vel[1] += gravity + 3;
-            VecCopy(Missile[loop].p_pos, Missile[loop].p_lastpos);
-            Missile[loop].p_pos[0] += Missile[loop].p_vel[0] * timeslice;
-            Missile[loop].p_pos[1] += Missile[loop].p_vel[1] * timeslice;
-            if (fabs(Missile[loop].p_vel[1]) > Missile[loop].p_maxvel[1])
-                Missile[loop].p_vel[1] *= 0.96;
-            Missile[loop].p_vel[0] *= 0.999;
-            if(Missile[loop].p_pos[1]>yres){
-                Missile[loop].status=0;
-                missiles_left++;
-            }
+	if(Missile[loop].status==1){
+	    Missile[loop].p_vel[1] += gravity + 3;
+	    VecCopy(Missile[loop].p_pos, Missile[loop].p_lastpos);
+	    Missile[loop].p_pos[0] += Missile[loop].p_vel[0] * timeslice;
+	    Missile[loop].p_pos[1] += Missile[loop].p_vel[1] * timeslice;
+	    if (fabs(Missile[loop].p_vel[1]) > Missile[loop].p_maxvel[1])
+		Missile[loop].p_vel[1] *= 0.96;
+	    Missile[loop].p_vel[0] *= 0.999;
+	    if(Missile[loop].p_pos[1]>yres){
+		Missile[loop].status=0;
+		missiles_left++;
+	    }
 
-        }
+	}
     }
 
     //check rain droplets
@@ -786,43 +786,43 @@ void physics(void)
 		}
 	    }
 
-	    
+
 	    //collision detection for missle/projectile
 	    for(loop = 0; loop<missleCount;loop++){
 		if(Missile[loop].status == 1){
 		    if (node->pos[0] >= (Missile[loop].p_pos[0] - 10)
 			    && node->pos[0] <= (Missile[loop].p_pos[0] + 10)) {
-                        if (node->lastpos[1] > Missile[loop].p_lastpos[1] 
+			if (node->lastpos[1] > Missile[loop].p_lastpos[1] 
 				|| node->lastpos[1] > Missile[loop].p_pos[1]) {
-                            if (node->pos[1] <= Missile[loop].p_pos[1] 
+			    if (node->pos[1] <= Missile[loop].p_pos[1] 
 				    || node->pos[1] <= Missile[loop].p_lastpos[1]) {
-                                //Collision Detected
+				//Collision Detected
 				show_explosion(node->pos[0], node->pos[1]);
-                                Log("Start to clear\n");
+				Log("Start to clear\n");
 
-                                savenode = node->next;
-                                delete_rain(node);
-                                node = savenode;
+				savenode = node->next;
+				delete_rain(node);
+				node = savenode;
 
-                                Log("Calling delete_projectile");
-                                delete_projectile(loop);
-                                collision=1;
-                                break; //Done checking missile
+				Log("Calling delete_projectile");
+				delete_projectile(loop);
+				collision=1;
+				break; //Done checking missile
 
-                            }
-                        }
-                    }
-                }
-                //Log("Finished with collision detection\n");
-            }
-            if(node == NULL) break;
+			    }
+			}
+		    }
+		}
+		//Log("Finished with collision detection\n");
+	    }
+	    if(node == NULL) break;
 
-            if(collision == 1){
-                collision = 0;
-                break;
-            }
+	    if(collision == 1){
+		collision = 0;
+		break;
+	    }
 
-	    
+
 	    //Chain nearby explosions
 	    if (chain == 1) //if an explosion is active
 	    {
@@ -846,7 +846,7 @@ void physics(void)
 		    }
 		}
 	    }
-	     
+
 	    //Player 1 Ship Collision
 	    if (node->pos[0] >= (umbrella.pos[0] - umbrella.width2) &&
 		    node->pos[0] <= (umbrella.pos[0] + umbrella.width2)) {
@@ -855,35 +855,35 @@ void physics(void)
 		    if (node->pos[1] <= umbrella.pos[1] ||
 			    node->pos[1] <= umbrella.lastpos[1]) {
 			hull1-=10;
+			show_explosion(node->pos[0], node->pos[1]);
+			savenode = node->next;
+			delete_rain(node);
+			node = savenode;
+			if (node == NULL) break;
+		    }
+		}
+	    }
+	    //Player 2 Ship Collision
+	    if (players > 0) //If player 2 active
+	    {
+		if (node->pos[0] >= (umbrella2.pos[0] - umbrella2.width2) &&
+			node->pos[0] <= (umbrella2.pos[0] + umbrella2.width2)) {
+		    if (node->lastpos[1] > umbrella2.lastpos[1] ||
+			    node->lastpos[1] > umbrella2.pos[1]) {
+			if (node->pos[1] <= umbrella2.pos[1] ||
+				node->pos[1] <= umbrella2.lastpos[1]) {
+			    hull2-=10;
 			    show_explosion(node->pos[0], node->pos[1]);
 			    savenode = node->next;
 			    delete_rain(node);
 			    node = savenode;
 			    if (node == NULL) break;
+
+			}
 		    }
 		}
 	    }
-		//Player 2 Ship Collision
-		if (players > 0) //If player 2 active
-		{
-			if (node->pos[0] >= (umbrella2.pos[0] - umbrella2.width2) &&
-				node->pos[0] <= (umbrella2.pos[0] + umbrella2.width2)) {
-			    if (node->lastpos[1] > umbrella2.lastpos[1] ||
-				    node->lastpos[1] > umbrella2.pos[1]) {
-				if (node->pos[1] <= umbrella2.pos[1] ||
-					node->pos[1] <= umbrella2.lastpos[1]) {
-				    hull2-=10;
-					show_explosion(node->pos[0], node->pos[1]);
-					savenode = node->next;
-					delete_rain(node);
-					node = savenode;
-					if (node == NULL) break;
-				    
-				}
-			    }
-			}
-		}
-	    
+
 
 	    if (node->pos[1] < -20.0f) {
 		//rain drop is below the visible area
@@ -970,16 +970,16 @@ void show_explosion(int x, int y)
 
     for (w = 0; w < explodeCount; w++)
     {
-    	if (size[w] == 0)
-	    	{
-	    	    explosion_X[w] = x;
-	    	    explosion_Y[w] = y;
-	    	    size[w] = 1;
+	if (size[w] == 0)
+	{
+	    explosion_X[w] = x;
+	    explosion_Y[w] = y;
+	    size[w] = 1;
 
-		    chain_x = x;
-		    chain_y = y;
-	    	    return;
-	    	}
+	    chain_x = x;
+	    chain_y = y;
+	    return;
+	}
     }
 }
 
