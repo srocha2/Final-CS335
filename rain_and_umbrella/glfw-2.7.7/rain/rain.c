@@ -1,19 +1,9 @@
 //cs335 - Spring 2013
 //program: Rain drops
 //author:  Gordon Griesel
-//purpose: Class exercise
+//purpose: Final Program 
 //
-//goal: Use a linked list to process real-time objects
-//
-//	1. define the linked-list node structure
-//	2. create nodes
-//	3. add node to end of linked-list
-//	4. examine all list nodes
-//	5. remove node when needed
-//	6. at end, empty the list
-//
-//
-//
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,9 +23,9 @@
 #endif //USE_LOG
 #include "defs.h"
 #include <GL/glfw.h>
+
+
 #ifdef USE_SOUND
-
-
 #include <FMOD/fmod.h>
 #include <FMOD/wincompat.h>
 #include "fmod.h"
@@ -62,19 +52,27 @@ void physics(void);
 void render(void);
 void draw_raindrops(void);
 void draw_background(void);
+void newGame(void);
+void difficulty(void);
+void twoPlayer(void);
+void gameOver(void);
 extern GLuint loadBMP(const char *imagepath);
 extern GLuint tex_readgl_bmp(char *fileName, int alpha_channel);
 
 //Added Functions
 void check_mouse(void);
-void draw_explosion(int,int);
+void draw_explosion(int,int,int);
 void draw_end(void);
 void draw_projectile(void);
+void show_explosion(int, int);
 
 //global variables and constants
 int time_control=1;
 int xres=800;
 int yres=600;
+
+int keys[512];
+
 
 //Bombs Down
 typedef struct t_raindrop {
@@ -91,28 +89,11 @@ typedef struct t_raindrop {
     struct t_raindrop *next;
 } Raindrop;
 
-/*Missles Up
-  typedef struct t_missile {
-  int type;
-  int width;
-  int length;
-  Vec pos;
-  Vec lastpos;
-  Vec vel;
-  Vec maxvel;
-  Vec force;
-  struct t_raindrop *prev;
-  struct t_raindrop *next;
-  } Missile;
-  */
-
-
-
 Raindrop *ihead=NULL;
 void delete_rain(Raindrop *node);
 void cleanup_raindrops(void);
 
-int pFire = 0;
+double pFire[2] = {0,0};
 typedef struct t_projectile{
     int p_linewidth;
     Vec p_pos;
@@ -124,15 +105,13 @@ typedef struct t_projectile{
     float p_color[4];
     struct t_projectile *prev;
     struct t_projectile *next;
+    int status;
 }Projectile;
 
-Projectile *jhead = NULL;
-void delete_projectile(Projectile *node);
+#define missleCount 40
+Projectile Missile[missleCount];
+void delete_projectile(int);
 void cleanup_projectiles(void);
-
-#ifdef USE_UMBRELLA
-#define UMBRELLA_FLAT  0
-#define UMBRELLA_ROUND 1
 typedef struct t_umbrella {
     int shape;
     Vec pos;
@@ -143,71 +122,47 @@ typedef struct t_umbrella {
 } Umbrella;
 
 Umbrella umbrella;
-int deflection=0;
-void draw_umbrella(void);
+Umbrella umbrella2;
 
-int deflection2=0;
-#endif //USE_UMBRELLA
+void draw_umbrella(void);
+void draw_umbrella2(void);
+
 
 int totrain=0;
 int maxrain=0;
-
+int missileNums = 50000;
 #ifdef USE_SOUND
 int play_sounds    = 0;
 #endif //USE_SOUND
 
 //Added Variables
+#define explodeCount 40 
 GLuint Bomb;
 GLuint Background;
 GLuint Explosion;
 GLuint Spaceship;
-GLuint Missile;
+GLuint missile;
+GLuint NewGame;
+GLuint Difficulty;
+GLuint GameOver;
+GLuint TwoPlayer;
 int score;
 int lives;
-int size;
-int missiles_left;
-int explosion_X;
-int explosion_Y;
+int lvl = 0;
+int players =1 ;
+int size[explodeCount];
+int missiles_left = missleCount;
+int explosion_X[explodeCount];
+int explosion_Y[explodeCount];
+int chain;
+int chain_x=0;
+int chain_y=0;
+double chain_radius=75;
+int loop = 0;
+int collision = 0;
 
 int main(int argc, char **argv)
 {
-
-
-	int choice;
-	printf("For New Game Choose '1'\n");
-	printf("To Quit Choose '2'\n");
-	if(scanf("%i",&choice) == 2)
-	{
-	 exit(EXIT_FAILURE);
-	}
-	printf("Choose Difficulty:\n");
-	printf("'1' For Beginner\n");
-	printf("'2' For Intermidiate\n");
-	printf("'3' For Expert\n");
-	scanf("%d", &lives);
-	
-	if(lives ==1){
-	  lives = lives*15;
-	}
-	else if(lives == 2){
-	  lives= lives*4;
-	}
-	if(&lives ==3){
-	  lives= (lives*1);
-	}
-
-/*	if(scanf("%d", lives) ==1){
-	lives == 15;
-	}
-	else if(scanf("%d", &lives) ==2){
-	lives = lives + 8;
-	}
-	if(scanf("%d", &lives) ==3){
-		lives= lives + 2;
-	}
-*/
-
-
     int i, nmodes;
     GLFWvidmode glist[256];
     open_log_file();
@@ -219,6 +174,7 @@ int main(int argc, char **argv)
     if (fmod_createsound("../media/drip.wav", 1)) return 1;
     fmod_setmode(0,FMOD_LOOP_NORMAL);
     fmod_playsound(0);
+ if (fmod_createsound("../media/explosion2.wav", 2)) return 1; //laser fire
     //fmod_systemupdate();
 #endif //USE_SOUND
     //
@@ -234,13 +190,12 @@ int main(int argc, char **argv)
 	glfwTerminate();
 	return 0;
     }
+    glfwSetKeyCallback((GLFWkeyfun)(checkkey));
     glfwSetWindowTitle("Raindrops in linked list");
     glfwSetWindowPos(0, 0);
     init();
     InitGL();
-    glfwSetKeyCallback((GLFWkeyfun)(checkkey));
-    //glfwSetMousePosCallback(mouse_move);
-    //glfwEnable( GLFW_STICKY_KEYS );
+   // glfwSetKeyCallback((GLFWkeyfun)(checkkey));
     glfwEnable( GLFW_KEY_REPEAT );
     glfwEnable( GLFW_MOUSE_CURSOR );
     //glShadeModel(GL_FLAT);
@@ -248,9 +203,9 @@ int main(int argc, char **argv)
     //texture maps must be enabled to draw fonts
     glEnable(GL_TEXTURE_2D);
     initialize_fonts();
-   // lives = 20;
-    missiles_left = 20;
-    size = 100;
+    lives = 20;
+    //missiles_left = 20;
+    //size = 100;
     //
     while(1) {
 	for (i=0; i<time_control; i++)
@@ -278,20 +233,66 @@ int main(int argc, char **argv)
     return 0;
 }
 
+void newGame(void)
+{
+    glColor3f(1.0f,1.0f,1.0f);
+    glBindTexture(GL_TEXTURE_2D,NewGame);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f,0.0f); glVertex2i(0,0);
+    glTexCoord2f(0.0f,1.0f); glVertex2i(0,yres);
+    glTexCoord2f(1.0f,1.0f); glVertex2i(xres,yres);
+    glTexCoord2f(1.0f,0.0f); glVertex2i(xres,0);
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D,0);
+}
+
+void difficulty(void)
+{
+    glColor3f(1.0f,1.0f,1.0f);
+    glBindTexture(GL_TEXTURE_2D,Difficulty);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f,0.0f); glVertex2i(0,0);
+    glTexCoord2f(0.0f,1.0f); glVertex2i(0,yres);
+    glTexCoord2f(1.0f,1.0f); glVertex2i(xres,yres);
+    glTexCoord2f(1.0f,0.0f); glVertex2i(xres,0);
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D,0);
+}
+
+void twoPlayer(void)
+{
+    glColor3f(1.0f,1.0f,1.0f);
+    glBindTexture(GL_TEXTURE_2D,TwoPlayer);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f,0.0f); glVertex2i(0,0);
+    glTexCoord2f(0.0f,1.0f); glVertex2i(0,yres);
+    glTexCoord2f(1.0f,1.0f); glVertex2i(xres,yres);
+    glTexCoord2f(1.0f,0.0f); glVertex2i(xres,0);
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D,0);
+}
+
+void gameOver(void)
+{
+    glColor3f(1.0f,1.0f,1.0f);
+    glBindTexture(GL_TEXTURE_2D,GameOver);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f,0.0f); glVertex2i(0,0);
+    glTexCoord2f(0.0f,1.0f); glVertex2i(0,yres);
+    glTexCoord2f(1.0f,1.0f); glVertex2i(xres,yres);
+    glTexCoord2f(1.0f,0.0f); glVertex2i(xres,0);
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D,0);
+
+}
+
 void checkkey(int k1, int k2)
 {
     static int shift=0;
-
-    if(k2 ==GLFW_PRESS){
-	if(k1 == ' '){
-	    pFire = 1;
-	    missiles_left--;
-	    return;
-	}
-    }
-
+    
     if (k2 == GLFW_PRESS) {
 	//some key is being pressed now
+	keys[k1] = 1;
 	if (k1 == GLFW_KEY_LSHIFT || k1 == GLFW_KEY_RSHIFT) {
 	    //it is a shift key
 	    shift=1;
@@ -299,6 +300,7 @@ void checkkey(int k1, int k2)
 	}
     }
     if (k2 == GLFW_RELEASE) {
+	keys[k1] = 0;
 	if (k1 == GLFW_KEY_LSHIFT || k1 == GLFW_KEY_RSHIFT) {
 	    //the shift key was released
 	    shift=0;
@@ -306,6 +308,7 @@ void checkkey(int k1, int k2)
 	//don't process any other keys on a release
 	return;
     }
+    
 #ifdef USE_SOUND
     if (k1 == 'S') {
 	play_sounds ^= 1;
@@ -318,47 +321,73 @@ void checkkey(int k1, int k2)
 	    time_control = 0;
 	return;
     }
-    if (k1 == '1') {
+/*    if (k1 == '1') {
 	if (++time_control > 32)
 	    time_control = 32;
 	return;
     }
-    if (k1 == 'W') {
-	if (shift) {
-	    //shrink the umbrella
-	    umbrella.width *= (1.0 / 1.05);
-	} else {
-	    //enlarge the umbrella
-	    umbrella.width *= 1.05;
-	}
-	//half the width
-	umbrella.width2 = umbrella.width * 0.5;
-	umbrella.radius = (float)umbrella.width2;
-	return;
-    }
-    if (k1 == 'D') {
-	deflection ^= 1;
-    }
-    if (k1 == GLFW_KEY_LEFT)  {
-	VecCopy(umbrella.pos, umbrella.lastpos);
-	umbrella.pos[0] -= 10.0;
-    }
-    if (k1 == GLFW_KEY_RIGHT)  {
-	VecCopy(umbrella.pos, umbrella.lastpos);
-	umbrella.pos[0] += 10.0;
-    }
+*/
+if (k1 == 'N') {
+        lvl= 1;
+}
+if (k1 == 'Q') {
+        exit(EXIT_FAILURE);
+        }
+if (k1 == '1'){
+        lvl = 2;
+	players = 0;
+}
+if (k1 == '2'){
+        lvl = 2;
+	players = 1;
+	
+}
+if (k1 == 'I'){
+        lvl = 3;
+        lives = 50;
+        missileNums = 1000;
+        time_control = 1;
+        }
+if (k1 == 'O'){
+        lvl = 3;
+        lives = 30;
+        missileNums = 500;
+        time_control = 2;
+        }
+if (k1 == 'P'){
+        lvl = 3;
+        lives = 20;
+        missileNums=100;
+        time_control=3;
+        }
+
+
+
 
 }
 
 void init(void)
 {
+
+    int i;
+    for (i=0; i<256; i++)
+    {
+    	keys[i] = 0;
+    }
     umbrella.pos[0] = xres/2; 
     umbrella.pos[1] = 100;
     VecCopy(umbrella.pos, umbrella.lastpos);
     umbrella.width = 200.0;
     umbrella.width2 = umbrella.width * 0.5;
-    //umbrella.radius = (float)umbrella.width2;
-    umbrella.shape = UMBRELLA_FLAT;
+
+    if (players > 0) // Initialize player 2
+    {
+	umbrella2.pos[0] = xres/2;
+	umbrella2.pos[1] = 200;
+	VecCopy(umbrella2.pos, umbrella2.lastpos);
+	umbrella2.width = 200.0;
+	umbrella2.width2 = umbrella2.width * 0.5;
+    }
 }
 
 int InitGL(GLvoid)
@@ -375,7 +404,14 @@ int InitGL(GLvoid)
     Bomb = tex_readgl_bmp("bomb.bmp", ALPHA);
     Background = tex_readgl_bmp("space.bmp",ALPHA);
     Explosion = tex_readgl_bmp("explosion.bmp",ALPHA);
-    Missile = tex_readgl_bmp("missile.bmp",ALPHA);
+    missile = tex_readgl_bmp("missile.bmp",ALPHA);
+
+    NewGame = tex_readgl_bmp("NewGameQuit.bmp",ALPHA);
+    TwoPlayer= tex_readgl_bmp("PlayerNum.bmp",ALPHA);
+    Difficulty = tex_readgl_bmp("difficulty.bmp",ALPHA);
+    GameOver = tex_readgl_bmp("GameOver.bmp",ALPHA);
+
+
 
     return 1;
 }
@@ -395,6 +431,22 @@ void render(GLvoid)
     glEnable(GL_BLEND);
 
 
+	if(lives < -1)
+        gameOver();
+
+
+        if(lvl == 0)
+        newGame();
+
+        if(lvl ==1)
+        twoPlayer();
+
+        if(lvl ==2)
+        difficulty();
+
+        if(lvl == 3 && lives > 0) {
+
+
     /*if(lives<=0){
       while(1){
       draw_end();
@@ -409,21 +461,26 @@ void render(GLvoid)
     draw_raindrops();
     draw_projectile();
 
-    if(size > 0){
-	size ++;
-	draw_explosion(explosion_X,explosion_Y);
-/*#ifdef USE_SOUND
-	if(fmod_createsound("../media/MissileSound.wav", 0));
-	fmod_setmode(0, FMOD_LOOP_OFF);
-	fmod_playsound(0);
-#endif */
-	if(size >=100)
-	    size = 0;
- 	}
+    int w;
+    int c;
+    for (w = 0; w < explodeCount; w++)
+    if(size[w] > 0){
+	chain = 1;
+	size[w] ++;
+	draw_explosion(w,explosion_X[w],explosion_Y[w]);
+
+	if(size[w] >=100+rnd()*500)
+	{
+	    size[w] = 0;
+	    chain = 0;
+	}
+    }
 
     glDisable(GL_BLEND);
 
     draw_umbrella();
+    if ( players == 1)
+	draw_umbrella2();
 
     //Draw Text
     Rect r;
@@ -439,11 +496,12 @@ void render(GLvoid)
 
     glColor3f(1.0f,1.0f,1.0f);
 }
+}
 
 
 void draw_umbrella(void)
 {
-    glColor4f(1.0f, 1.0f, 0.0f, 0.8f);
+    glColor4f(1.0f, 0.0f, 0.0f, 0.8f);
     glPushMatrix();
     glTranslatef(umbrella.pos[0],umbrella.pos[1],umbrella.pos[2]);
     glEnable(GL_ALPHA_TEST);
@@ -462,45 +520,51 @@ void draw_umbrella(void)
     glColor3f(1.0f,1.0f,1.0f);
 }
 
-void draw_projectile(void)
+void draw_umbrella2(void)
 {
-    if (jhead) {
-	Projectile *p_node = jhead;
-
-/*#ifdef USE_SOUND
-	if(fmod_createsound("../media/MissileSound.wav", 0));
-	fmod_setmode(0, FMOD_LOOP_OFF);
-	fmod_playsound(0);
-#endif */
-
-	while(p_node) {
-	    glPushMatrix();
-
-	    glEnable(GL_ALPHA_TEST);
-	    glAlphaFunc(GL_GREATER, 0.0f);
-	    //Bind Missile to Projectiles
-	    glBindTexture(GL_TEXTURE_2D,Missile);
-	    glBegin(GL_QUADS);
-	    glTexCoord2f(0.0f,0.0f); glVertex2i(p_node->p_pos[0]-(p_node->p_linewidth/2),p_node->p_pos[1]);
-	    glTexCoord2f(0.0f,1.0f); glVertex2i(p_node->p_pos[0]-(p_node->p_linewidth/2),p_node->p_pos[1]+p_node->p_length);
-	    glTexCoord2f(1.0f,1.0f); glVertex2i(p_node->p_pos[0]+(p_node->p_linewidth/2),p_node->p_pos[1]+p_node->p_length);
-	    glTexCoord2f(1.0f,0.0f); glVertex2i(p_node->p_pos[0]+(p_node->p_linewidth/2),p_node->p_pos[1]);
-	    glEnd();
-	    glDisable(GL_ALPHA_TEST);
-	    glBindTexture(GL_TEXTURE_2D,0);
-	    glPopMatrix();
-/*
-#ifdef USE_SOUND
-	fmod_createsound("../media/MissileSound.wav", 0);
-	fmod_setmode(0, FMOD_LOOP_OFF);
-	fmod_playsound(0);
-#endif
-*/
-	    if (p_node->next==NULL) break;
-	    p_node = p_node->next;
-	}
-    }
+    glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
+    glPushMatrix();
+    glTranslatef(umbrella2.pos[0],umbrella2.pos[1],umbrella2.pos[2]);
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0f);
+    glBindTexture(GL_TEXTURE_2D,Spaceship);
+    glBegin(GL_QUADS);
+    float w2 = umbrella2.width2;
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-w2, -w2);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f( w2, -w2);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f( w2,  w2);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-w2,  w2);
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_ALPHA_TEST);
+    glPopMatrix();
+    glColor3f(1.0f,1.0f,1.0f);
 }
+
+void draw_projectile(void){
+    //Log("draw_projectile\n");
+    for(loop=0;loop<missleCount;loop++){
+        if(Missile[loop].status==1){
+            glPushMatrix();
+            glEnable(GL_ALPHA_TEST);
+            glAlphaFunc(GL_GREATER, 0.0f);
+            //Bind Missile to Projectiles
+            glBindTexture(GL_TEXTURE_2D,missile);
+            glBegin(GL_QUADS);
+            glTexCoord2f(0.0f,0.0f); glVertex2i(Missile[loop].p_pos[0]-(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]);
+            glTexCoord2f(0.0f,1.0f); glVertex2i(Missile[loop].p_pos[0]-(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]+Missile[loop].p_length);
+            glTexCoord2f(1.0f,1.0f); glVertex2i(Missile[loop].p_pos[0]+(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]+Missile[loop].p_length);
+            glTexCoord2f(1.0f,0.0f); glVertex2i(Missile[loop].p_pos[0]+(Missile[loop].p_linewidth/2),Missile[loop].p_pos[1]);
+            glEnd();
+            glDisable(GL_ALPHA_TEST);
+            glBindTexture(GL_TEXTURE_2D,0);
+            glPopMatrix();
+            //Log("Draw Loop: %i \n",loop);
+        }
+    }
+    //Log("Ended draw_projectile\n");
+}
+
 
 void draw_raindrops(void)
 {
@@ -543,7 +607,6 @@ void draw_background(void)
     glEnd();
     glBindTexture(GL_TEXTURE_2D,0);
 
-
 }
 
 double VecNormalize(Vec vec) {
@@ -566,8 +629,42 @@ double VecNormalize(Vec vec) {
 
 void physics(void)
 {
+    
+    //Keep player in viewable space
+    if (umbrella.pos[0] >= (float)xres)
+	umbrella.pos[0] -= 2.0;
+    if (umbrella.pos[0] <= 0)
+	umbrella.pos[0] += 2.0;
+    //New updated movement controls
+    if (keys[GLFW_KEY_LEFT]==1)  {
+	VecCopy(umbrella.pos, umbrella.lastpos);
+	umbrella.pos[0] -= 1.0;
+    }
+    if (keys[GLFW_KEY_RIGHT]==1)  {
+	VecCopy(umbrella.pos, umbrella.lastpos);
+	umbrella.pos[0] += 1.0;
+    }
+
+    if (players > 0) //2nd player
+    {
+	if (umbrella2.pos[0] >= (float)xres)
+	    umbrella2.pos[0] -= 2.0;;
+	if (umbrella2.pos[0] <= 0)
+	    umbrella2.pos[0] += 2.0;
+
+	if (keys['A']==1)  {
+	    VecCopy(umbrella2.pos, umbrella2.lastpos);
+	    umbrella2.pos[0] -= 1.0;
+	}
+	if (keys['D']==1)  {
+	    VecCopy(umbrella2.pos, umbrella2.lastpos);
+	    umbrella2.pos[0] += 1.0;				    
+	}
+
+    }
+
     //Log("physics()...\n");
-    if (random(1000) < 1) {
+    if (random(missileNums) < 1) {
 	//create new rain drops...
 	Raindrop *node = (Raindrop *)malloc(sizeof(Raindrop));
 	if (node == NULL) {
@@ -579,7 +676,13 @@ void physics(void)
 	node->pos[0] = rnd() * (float)xres;
 	node->pos[1] = rnd() * 100.0f + (float)yres;
 	VecCopy(node->pos, node->lastpos);
-	node->vel[0] = 0.0f;
+
+	// Set random x velocity for missles
+	if (random(20) > 10)
+	    node->vel[0] = rnd()*20;
+	if (random(20) <= 10)
+	    node->vel[0] = -rnd()*20;
+	//node->vel[0] = 0.0f;
 	node->vel[1] = 0.0f;
 
 	node->linewidth = 15;
@@ -594,35 +697,66 @@ void physics(void)
     }
     //
 
-    if (pFire > 0)
+    //if (pFire > 0)
+    if (keys[GLFW_KEY_UP] == 1)
     {
-	pFire = 0; // reset shoot condition
-	Projectile *p_node = (Projectile *)malloc(sizeof(Projectile));
-	if (p_node == NULL) {
-	    Log("error allocating node.\n");
-	    exit(EXIT_FAILURE);
+	//pFire = 0; // reset shoot condition
+	if (glfwGetTime() > pFire[0])
+	{
+	    pFire[0] = glfwGetTime() + 0.5;
+	    for(loop=0;loop<missleCount;loop++){
+    		Log("Inside Create Missile For\n");
+    		if(Missile[loop].status==0){
+    		    Log("Inside Create Missile If\n");
+    		    missiles_left--;
+    		    Missile[loop].status = 1;
+    		    Missile[loop].p_pos[0] = umbrella.pos[0]-6;   //Create at umbrella x
+    		    Missile[loop].p_pos[1] = umbrella.pos[1]+30;  //Create at umbrella y
+    		    VecCopy(Missile[loop].p_pos,Missile[loop].p_lastpos);
+    		    Missile[loop].p_vel[0] = 0.0f;
+    		    Missile[loop].p_vel[1] = 0.0f;
+    		    Missile[loop].p_linewidth = 20;
+    		    Missile[loop].p_maxvel[1] = (float)(Missile[loop].p_linewidth*.9);
+    		    Missile[loop].p_length = 35;
+    		    Log("Done Creating Missile\n");
+    		    break;
+		}
+    	    }
 	}
-	p_node->prev = p_node->next = NULL;
-	p_node->p_pos[0] = umbrella.pos[0]-6; //Create at umbrella x
-	p_node->p_pos[1] = umbrella.pos[1]+30; //Create at umbrella y
-	VecCopy(p_node->p_pos, p_node->p_lastpos);
-	p_node->p_vel[0] = p_node->p_vel[1] = 0.0f;
-
-
-	p_node->p_linewidth = 15;
-	p_node->p_maxvel[1] = (float)(p_node->p_linewidth*.9);
-	p_node->p_length = 30;
-
-	p_node->next = jhead;
-	if (jhead) jhead->prev = p_node;
-	jhead = p_node;
     }
 
+    if (players > 0)
+    {
+	if (keys['W'] == 1)
+    	{
+    	    //pFire = 0; // reset shoot condition
+	    if (glfwGetTime() > pFire[1])
+    	    {
+    		pFire[1] = glfwGetTime() + 0.5;
+    		for(loop=0;loop<missleCount;loop++){
+    		    Log("Inside Create Missile For\n");
+    		    if(Missile[loop].status==0){
+    			Log("Inside Create Missile If\n");
+    			missiles_left--;
+    			Missile[loop].status = 1;
+    			Missile[loop].p_pos[0] = umbrella2.pos[0]-6;   //Create at umbrella x
+			Missile[loop].p_pos[1] = umbrella2.pos[1]+30;  //Create at umbrella y          
+	       		VecCopy(Missile[loop].p_pos,Missile[loop].p_lastpos);
+    			Missile[loop].p_vel[0] = 0.0f;
+			Missile[loop].p_vel[1] = 0.0f;
+    			Missile[loop].p_linewidth = 20;
+    			Missile[loop].p_maxvel[1] = (float)(Missile[loop].p_linewidth*.9);
+    			Missile[loop].p_length = 35;
+    			Log("Done Creating player 2 Missile\n");
+    			break;
+                }
+            }
+        }
+    }
 
+    }
 
-
-
-    //move rain droplets
+    //Move Bombs Downward
     if (ihead) {
 	Raindrop *node = ihead;
 	while(node) {
@@ -634,28 +768,33 @@ void physics(void)
 	    if (fabs(node->vel[1]) > node->maxvel[1])
 		node->vel[1] *= 0.96;
 	    node->vel[0] *= 0.999;
+
+	    if (node->pos[0] < 0 || node->pos[0] > (float)xres)
+		node->vel[0] = node->vel[0] * (-1);
+
 	    //
 	    if (node->next == NULL) break;
 	    node = node->next;
 	}
     }
-    //move player-fired projectile
-    if (jhead) {
-	Projectile *p_node = jhead;
-	while(p_node) {
-	    p_node->p_vel[1] += gravity + 10; 
-	    VecCopy(p_node->p_pos, p_node->p_lastpos);
-	    p_node->p_pos[0] += p_node->p_vel[0] * timeslice;
-	    p_node->p_pos[1] += p_node->p_vel[1] * timeslice;
-	    if (fabs(p_node->p_vel[1]) > p_node->p_maxvel[1])
-		p_node->p_vel[1] *= 0.96;
-	    p_node->p_vel[0] *= 0.999;
-	    if (p_node->next == NULL) break;
-	    p_node = p_node->next;
+    //move player-fired projectile upward
 
-	}
+    for(loop=0;loop<missleCount;loop++){
+        if(Missile[loop].status==1){
+            Missile[loop].p_vel[1] += gravity + 3;
+            VecCopy(Missile[loop].p_pos, Missile[loop].p_lastpos);
+            Missile[loop].p_pos[0] += Missile[loop].p_vel[0] * timeslice;
+            Missile[loop].p_pos[1] += Missile[loop].p_vel[1] * timeslice;
+            if (fabs(Missile[loop].p_vel[1]) > Missile[loop].p_maxvel[1])
+                Missile[loop].p_vel[1] *= 0.96;
+            Missile[loop].p_vel[0] *= 0.999;
+            if(Missile[loop].p_pos[1]>yres){
+                Missile[loop].status=0;
+                missiles_left++;
+            }
+
+        }
     }
-
 
     //check rain droplets
     if (ihead) {
@@ -663,8 +802,8 @@ void physics(void)
 	int x, y;
 	Raindrop *savenode;
 	Raindrop *node = ihead;
-	Projectile *p_savenode;
-	Projectile *p_node = jhead;
+	//Projectile *p_savenode;
+	//Projectile *p_node = jhead;
 	while(node) {
 	    n++;
 #ifdef USE_SOUND
@@ -681,110 +820,112 @@ void physics(void)
 	    }
 #endif //USE_SOUND
 
+	    
 	    //collision detection for missle/projectile
+	    for(loop = 0; loop<missleCount;loop++){
+		if(Missile[loop].status == 1){
+		    if (node->pos[0] >= (Missile[loop].p_pos[0] - 10)
+			    && node->pos[0] <= (Missile[loop].p_pos[0] + 10)) {
+                        if (node->lastpos[1] > Missile[loop].p_lastpos[1] 
+				|| node->lastpos[1] > Missile[loop].p_pos[1]) {
+                            if (node->pos[1] <= Missile[loop].p_pos[1] 
+				    || node->pos[1] <= Missile[loop].p_lastpos[1]) {
+                                //Collision Detected
+				show_explosion(node->pos[0], node->pos[1]);
+                                Log("Start to clear\n");
 
-	    if (jhead){
-		if (node->pos[0] >= (p_node->p_pos[0] - 10) &&
-			node->pos[0] <= (p_node->p_pos[0] + 10)) {
-		    if (node->lastpos[1] > p_node->p_lastpos[1] ||
-			    node->lastpos[1] > p_node->p_pos[1]) {
-			if (node->pos[1] <= p_node->p_pos[1] ||
-				node->pos[1] <= p_node->p_lastpos[1]) {
+                                savenode = node->next;
+                                delete_rain(node);
+                                node = savenode;
+
+                                Log("Calling delete_projectile");
+                                delete_projectile(loop);
+                                collision=1;
+                                break; //Done checking missile
+
+                            }
+                        }
+                    }
+                }
+                //Log("Finished with collision detection\n");
+            }
+            if(node == NULL) break;
+
+            if(collision == 1){
+                collision = 0;
+                break;
+            }
+
+	    
+	    //Chain nearby explosions
+	    if (chain == 1) //if an explosion is active
+	    {
+		if (node->pos[0] >= (chain_x-chain_radius) &&
+			node->pos[0] <= (chain_x+chain_radius)) {
+		    if (node->lastpos[1] > (chain_y-chain_radius) ||
+			    node->lastpos[1] > (chain_y-chain_radius)) {
+			if (node->pos[1] <= (chain_y+chain_radius)||
+				node->pos[1] <= (chain_y+chain_radius)) {
 			    if (node->linewidth > 1) {
+				show_explosion(node->pos[0], node->pos[1]);
+				score += 100;
 
-				y=yres-y;
-				explosion_X = node->pos[0];
-				explosion_Y = node->pos[1];
-			    	size = 1;
-
-score++;
-#ifdef USE_SOUND
-	if(fmod_createsound("../media/explosion2.wav", 0));
-	fmod_setmode(0, FMOD_LOOP_OFF);
-	fmod_playsound(0);
-#endif
-
-
-					
-				//savenode = node->next;
-				//delete_rain(node);
-				//node = savenode;
-				//if (node == NULL) break;
-				
-				//p_savenode = p_node->next;
-				//delete_projectile(p_node);
-				//p_node = p_savenode;
-				//if (p_node == NULL || node == NULL) break;
-				
-				node->pos[0] = rnd() * (float)xres;
-				node->pos[1] = rnd() * 100.0f + (float)yres;
-
-			    }
-			}
-		    }
-		}
-	    }
-
-#ifdef USE_UMBRELLA
-	    if (1) {
-		//collision detection for raindrop on umbrella
-		if (umbrella.shape == UMBRELLA_FLAT) {
-		    if (node->pos[0] >= (umbrella.pos[0] - umbrella.width2) &&
-			    node->pos[0] <= (umbrella.pos[0] + umbrella.width2)) {
-			if (node->lastpos[1] > umbrella.lastpos[1] ||
-				node->lastpos[1] > umbrella.pos[1]) {
-			    if (node->pos[1] <= umbrella.pos[1] ||
-				    node->pos[1] <= umbrella.lastpos[1]) {
-				if (node->linewidth > 0) {
-				    savenode = node->next;
-				    delete_rain(node);
-				    node = savenode;
-				    if (node == NULL) break;
-				}
-			    }
-			}
-		    }
-		}
-		if (umbrella.shape == UMBRELLA_ROUND) {
-		    float d0 = node->pos[0] - umbrella.pos[0];
-		    float d1 = node->pos[1] - umbrella.pos[1];
-		    float distance = sqrt((d0*d0)+(d1*d1));
-		    if (distance <= umbrella.radius && node->pos[1] > umbrella.pos[1]) {
-			if (node->linewidth > 0) {
-			    if (deflection) {
-				//deflect raindrop
-				double dot;
-				Vec v, up = {0,1,0};
-				VecSub(node->pos, umbrella.pos, v);
-				VecNormalize(v);
-				node->pos[0] = umbrella.pos[0] + v[0] * umbrella.radius;
-				node->pos[1] = umbrella.pos[1] + v[1] * umbrella.radius;
-				dot = VecDot(v,up);
-				dot += 1.0;
-				node->vel[0] += v[0] * dot * 10.0;
-				node->vel[1] += v[1] * dot * 10.0;
-			    } else {
 				savenode = node->next;
 				delete_rain(node);
 				node = savenode;
-				if (node == NULL) break;
+				if (node ==NULL) break;
+
 			    }
 			}
 		    }
 		}
-
-
-		//VecCopy(umbrella.pos, umbrella.lastpos);
 	    }
-#endif //USE_UMBRELLA
+	     
+	    if (node->pos[0] >= (umbrella.pos[0] - umbrella.width2) &&
+		    node->pos[0] <= (umbrella.pos[0] + umbrella.width2)) {
+		if (node->lastpos[1] > umbrella.lastpos[1] ||
+			node->lastpos[1] > umbrella.pos[1]) {
+		    if (node->pos[1] <= umbrella.pos[1] ||
+			    node->pos[1] <= umbrella.lastpos[1]) {
+			if (node->linewidth > 0) {
+			    show_explosion(node->pos[0], node->pos[1]);
+			    savenode = node->next;
+			    delete_rain(node);
+			    node = savenode;
+			    if (node == NULL) break;
+			}
+		    }
+		}
+
+		if (players > 0) //If player 2 active
+		{
+			if (node->pos[0] >= (umbrella2.pos[0] - umbrella2.width2) &&
+				node->pos[0] <= (umbrella2.pos[0] + umbrella2.width2)) {
+			    if (node->lastpos[1] > umbrella2.lastpos[1] ||
+				    node->lastpos[1] > umbrella2.pos[1]) {
+				if (node->pos[1] <= umbrella2.pos[1] ||
+					node->pos[1] <= umbrella2.lastpos[1]) {
+				    if (node->linewidth > 0) {
+					show_explosion(node->pos[0], node->pos[1]);
+					savenode = node->next;
+					delete_rain(node);
+					node = savenode;
+					if (node == NULL) break;
+				    }
+				}
+			    }
+			}
+		}
+	    }
+
 	    if (node->pos[1] < -20.0f) {
 		//rain drop is below the visible area
+		show_explosion(node->pos[0], node->pos[1]+30);
 		savenode = node->next;
 		delete_rain(node);
 		lives--;
 		node = savenode;
 		if (node == NULL) break;
-
 	    }
 	    if (node->next == NULL) break;
 	    node = node->next;
@@ -807,6 +948,7 @@ void delete_rain(Raindrop *node)
     if (node->next != NULL && node->prev == NULL) {
 	//at beginning of list
 	node->next->prev = NULL;
+	ihead = node->next;
 	free(node);
 	return;
     }
@@ -826,31 +968,13 @@ void delete_rain(Raindrop *node)
     //to do: optimize the code above.
 }
 
+void delete_projectile(int val){
+    Log("Doing delete_projectile:%i\n",val);
 
+    Missile[val].status = 0;
+    missiles_left++;
 
-void delete_projectile(Projectile *p_node)
-{
-    if (p_node->next == NULL && p_node->prev == NULL) {
-	free(p_node);
-	jhead = NULL;
-	return;
-    }
-    if (p_node->next != NULL && p_node->prev == NULL) {
-	p_node->next->prev = NULL;
-	free(p_node);
-	return;
-    }
-    if (p_node->next == NULL && p_node->prev != NULL) {
-	p_node->prev->next = NULL;
-	free(p_node);
-	return;
-    }
-    if (p_node->next != NULL && p_node->prev != NULL) {
-	p_node->prev->next = p_node->next;
-	p_node->next->prev = p_node->prev;
-	free(p_node);
-	return;
-    }
+    Log("Done delete_projectile4\n");
 }
 
 
@@ -864,16 +988,14 @@ void cleanup_raindrops(void)
     }
 }
 
-void cleanup_projectiles(void)
-{
-    Projectile *p;
-    while(jhead) {
-	p = jhead->next;
-	free(jhead);
-	jhead = p;
+void cleanup_projectiles(void){
+    Log("Starting cleanup_projectile\n");
+    for(loop=0;loop<missleCount;loop++){
+	Missile[loop].status = 0;
     }
-
+    Log("Finished cleanup_projectile\n");
 }
+
 
 void check_mouse(void){
     int x,y;
@@ -882,26 +1004,46 @@ void check_mouse(void){
     if(glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
 	glfwGetMousePos(&x,&y);
 	y=yres-y;
-	explosion_X = x;
-	explosion_Y = y;
-	size = 1;
+	explosion_X[0] = x;
+	explosion_Y[0] = y;
+	size[0] = 1;
 
     }
 
 }
 
-void draw_explosion(int x, int y){
+void show_explosion(int x, int y)
+{
+    int w;
+    fmod_playsound(2);
+
+    for (w = 0; w < explodeCount; w++)
+    {
+    	if (size[w] == 0)
+	    	{
+	    	    explosion_X[w] = x;
+	    	    explosion_Y[w] = y;
+	    	    size[w] = 1;
+
+		    chain_x = x;
+		    chain_y = y;
+	    	    return;
+	    	}
+    } 
+}
+
+void draw_explosion(int w,int x, int y){
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER,0.0f);
     glBindTexture(GL_TEXTURE_2D,Explosion);
-    glColor3f(1.0f,1.0f,1.0f);
+    glColor3f(1.0f,rnd()*1.0f,rnd()*1.0f);
 
     glBegin(GL_QUADS);
 
-    glTexCoord2f(0.0f,0.0f); glVertex2i(x-size,y-size);
-    glTexCoord2f(0.0f,1.0f); glVertex2i(x-size,y+size);
-    glTexCoord2f(1.0f,1.0f); glVertex2i(x+size,y+size);
-    glTexCoord2f(1.0f,0.0f); glVertex2i(x+size,y-size);
+    glTexCoord2f(0.0f,0.0f); glVertex2i(x-size[w],y-size[w]);
+    glTexCoord2f(0.0f,1.0f); glVertex2i(x-size[w],y+size[w]);
+    glTexCoord2f(1.0f,1.0f); glVertex2i(x+size[w],y+size[w]);
+    glTexCoord2f(1.0f,0.0f); glVertex2i(x+size[w],y-size[w]);
 
     glEnd();
 
@@ -918,4 +1060,7 @@ void draw_end(void){
     glVertex2i(0,yres);
     glEnd();
 }
+
+
+
 
