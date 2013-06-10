@@ -145,6 +145,8 @@ int chain_y=0;
 double chain_radius=75;
 int loop = 0;
 int collision = 0;
+int hull1 = 100;
+int hull2 = 100;
 
 int main(int argc, char **argv)
 {
@@ -456,8 +458,8 @@ void render(GLvoid)
     ggprint12(&r, 20, 0x0000ff00, "Lives Left: %i\n",lives);
     ggprint12(&r, 20, 0x00ff0000, "Score: %i \n", score);
     ggprint12(&r, 20, 0x00ff0000, "Missiles Left: %i \n", missiles_left);
-    ggprint12(&r, 20, 0x00ff0000, "exp_X: %i \n", explosion_X);
-    ggprint12(&r, 20, 0x00ff0000, "exp_Y: %i \n", explosion_Y);
+    ggprint12(&r, 20, 0x00ff0000, "Ship 1 Health: %i \n", hull1);
+    ggprint12(&r, 20, 0x00ff0000, "Ship 2 Health: %i \n", hull2);
 
     glColor3f(1.0f,1.0f,1.0f);
 }
@@ -844,22 +846,23 @@ void physics(void)
 		}
 	    }
 	     
+	    //Player 1 Ship Collision
 	    if (node->pos[0] >= (umbrella.pos[0] - umbrella.width2) &&
 		    node->pos[0] <= (umbrella.pos[0] + umbrella.width2)) {
 		if (node->lastpos[1] > umbrella.lastpos[1] ||
 			node->lastpos[1] > umbrella.pos[1]) {
 		    if (node->pos[1] <= umbrella.pos[1] ||
 			    node->pos[1] <= umbrella.lastpos[1]) {
-			if (node->linewidth > 0) {
+			hull1-=10;
 			    show_explosion(node->pos[0], node->pos[1]);
 			    savenode = node->next;
 			    delete_rain(node);
 			    node = savenode;
 			    if (node == NULL) break;
-			}
 		    }
 		}
-
+	    }
+		//Player 2 Ship Collision
 		if (players > 0) //If player 2 active
 		{
 			if (node->pos[0] >= (umbrella2.pos[0] - umbrella2.width2) &&
@@ -868,13 +871,13 @@ void physics(void)
 				    node->lastpos[1] > umbrella2.pos[1]) {
 				if (node->pos[1] <= umbrella2.pos[1] ||
 					node->pos[1] <= umbrella2.lastpos[1]) {
-				    if (node->linewidth > 0) {
+				    hull2-=10;
 					show_explosion(node->pos[0], node->pos[1]);
 					savenode = node->next;
 					delete_rain(node);
 					node = savenode;
 					if (node == NULL) break;
-				    }
+				    
 				}
 			    }
 			}
