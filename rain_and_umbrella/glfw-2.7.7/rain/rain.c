@@ -203,7 +203,7 @@ int main(int argc, char **argv)
     glfwSetKeyCallback((GLFWkeyfun)NULL);
     glfwSetMousePosCallback((GLFWmouseposfun)NULL);
     close_log_file();
-    printf("totrain: %i  maxrain: %i\n",totrain,maxrain);
+    printf("totrain:%i  maxrain: %i\n",totrain,maxrain);
     glfwTerminate();
     fmod_cleanup();
     cleanup_fonts();
@@ -378,16 +378,14 @@ int InitGL(GLvoid)
     //Transparency
     Spaceship = tex_readgl_bmp("spaceship.bmp", ALPHA);
     Bomb = tex_readgl_bmp("bomb.bmp", ALPHA);
-    Background = tex_readgl_bmp("space.bmp",ALPHA);
+    Background = loadBMP("space.bmp");
     Explosion = tex_readgl_bmp("explosion.bmp",ALPHA);
     missile = tex_readgl_bmp("missile.bmp",ALPHA);
 
-    NewGame = tex_readgl_bmp("NewGameQuit.bmp",ALPHA);
-    TwoPlayer= tex_readgl_bmp("PlayerNum.bmp",ALPHA);
-    Difficulty = tex_readgl_bmp("difficulty.bmp",ALPHA);
-    GameOver = tex_readgl_bmp("GameOver.bmp",ALPHA);
-
-
+    NewGame = loadBMP("NewGameQuit.bmp");
+    TwoPlayer= loadBMP("PlayerNum.bmp");
+    Difficulty = loadBMP("difficulty.bmp");
+    GameOver = loadBMP("GameOver.bmp");
 
     return 1;
 }
