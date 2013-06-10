@@ -12,7 +12,7 @@
 //	5. remove node when needed
 //	6. at end, empty the list
 //
-//
+// sdfds
 // Hellow
 #include <stdio.h>
 #include <stdlib.h>

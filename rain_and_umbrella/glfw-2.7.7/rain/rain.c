@@ -10,17 +10,7 @@
 #include <math.h>
 #include <time.h>
 
-//These components can be turned on and off
-#define USE_SOUND
-#define USE_FONTS
-#define USE_UMBRELLA
-#define USE_TEXTURES
-#define USE_LOG
-
-
-#ifdef USE_LOG
 #include "log.h"
-#endif //USE_LOG
 #include "defs.h"
 #include <GL/glfw.h>
 
@@ -29,11 +19,8 @@
 #include <FMOD/fmod.h>
 #include <FMOD/wincompat.h>
 #include "fmod.h"
-#endif //USE_SOUND
 
-#ifdef USE_FONTS
 #include "fonts.h"
-#endif //USE_FONTS
 
 //macros
 #define rnd() (((double)rand())/(double)RAND_MAX)
@@ -73,6 +60,7 @@ int yres=600;
 
 int keys[512];
 
+int players;
 
 //Bombs Down
 typedef struct t_raindrop {
@@ -131,9 +119,7 @@ void draw_umbrella2(void);
 int totrain=0;
 int maxrain=0;
 int missileNums = 50000;
-#ifdef USE_SOUND
 int play_sounds    = 0;
-#endif //USE_SOUND
 
 //Added Variables
 #define explodeCount 40 
@@ -149,7 +135,6 @@ GLuint TwoPlayer;
 int score;
 int lives;
 int lvl = 0;
-int players =1 ;
 int size[explodeCount];
 int missiles_left = missleCount;
 int explosion_X[explodeCount];
@@ -167,7 +152,6 @@ int main(int argc, char **argv)
     GLFWvidmode glist[256];
     open_log_file();
     srand((unsigned int)time(NULL));
-#ifdef USE_SOUND
     //FMOD_RESULT result;
     if (fmod_init()) return 1;
     if (fmod_createsound("../media/sq1track01.wav", 0)) return 1;
@@ -176,7 +160,6 @@ int main(int argc, char **argv)
     fmod_playsound(0);
  if (fmod_createsound("../media/explosion2.wav", 2)) return 1; //laser fire
     //fmod_systemupdate();
-#endif //USE_SOUND
     //
     glfwInit();
     srand(time(NULL));
@@ -195,7 +178,7 @@ int main(int argc, char **argv)
     glfwSetWindowPos(0, 0);
     init();
     InitGL();
-   // glfwSetKeyCallback((GLFWkeyfun)(checkkey));
+    glfwSetKeyCallback((GLFWkeyfun)(checkkey));
     glfwEnable( GLFW_KEY_REPEAT );
     glfwEnable( GLFW_MOUSE_CURSOR );
     //glShadeModel(GL_FLAT);
@@ -222,12 +205,8 @@ int main(int argc, char **argv)
     close_log_file();
     printf("totrain: %i  maxrain: %i\n",totrain,maxrain);
     glfwTerminate();
-#ifdef USE_SOUND
     fmod_cleanup();
-#endif //USE_SOUND
-#ifdef USE_FONTS
     cleanup_fonts();
-#endif //USE_FONTS
     cleanup_raindrops();
     cleanup_projectiles();
     return 0;
@@ -258,6 +237,7 @@ void difficulty(void)
     glEnd();
     glBindTexture(GL_TEXTURE_2D,0);
 }
+<<<<<<< HEAD
 
 void twoPlayer(void)
 {
@@ -271,6 +251,8 @@ void twoPlayer(void)
     glEnd();
     glBindTexture(GL_TEXTURE_2D,0);
 }
+
+
 
 void gameOver(void)
 {
@@ -309,12 +291,10 @@ void checkkey(int k1, int k2)
 	return;
     }
     
-#ifdef USE_SOUND
     if (k1 == 'S') {
 	play_sounds ^= 1;
 	return;
     }
-#endif //USE_SOUND
 
     if (k1 == '`') {
 	if (--time_control < 0)
@@ -327,6 +307,7 @@ void checkkey(int k1, int k2)
 	return;
     }
 */
+
 if (k1 == 'N') {
         lvl= 1;
 }
@@ -339,8 +320,7 @@ if (k1 == '1'){
 }
 if (k1 == '2'){
         lvl = 2;
-	players = 1;
-	
+	players = 0;
 }
 if (k1 == 'I'){
         lvl = 3;
@@ -806,7 +786,6 @@ void physics(void)
 	//Projectile *p_node = jhead;
 	while(node) {
 	    n++;
-#ifdef USE_SOUND
 	    if (node->pos[1] < 0.0f) {
 		//raindrop hit ground
 		if (!node->sound && play_sounds) {
@@ -818,7 +797,6 @@ void physics(void)
 		    node->sound=1;
 		}
 	    }
-#endif //USE_SOUND
 
 	    
 	    //collision detection for missle/projectile
